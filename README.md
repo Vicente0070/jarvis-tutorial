@@ -179,6 +179,13 @@ python main_v3.py
 
 # Versão 4 - Completa
 python main_v4.py
+
+# Versão 4 - Modo texto (CLI) — sem áudio
+python jarvis_cli.py
+
+# Versão 4 - Modo texto com TTS habilitado (se sua máquina tem áudio)
+# (usa flag --no-tts para desativar TTS; por padrão o CLI não toca áudio)
+python jarvis_cli.py --no-tts
 ```
 
 ---
