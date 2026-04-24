@@ -222,6 +222,40 @@ python jarvis_cli.py --no-tts
 
 ---
 
+## 🔬 Testes Manuais e Checklist
+
+Siga estes passos para validar ambos os modos (áudio e texto):
+
+1) Preparação
+- Configure .env com OPENAI_API_KEY.
+- Instale dependências: pip install -r requirements.txt
+
+2) Teste modo áudio (main_v4.py)
+- Rode: python main_v4.py
+- Diga "Qual é a hora?" ou "Que horas são?" e verifique a resposta.
+- Pergunte "Como está o clima em São Paulo?" (se tiver OPENWEATHER_API_KEY configurada) e valide a tool.
+- Diga "exportar histórico" e verifique se um arquivo é criado.
+- Diga "sair" para encerrar.
+
+3) Teste modo texto (jarvis_cli.py)
+- Rode sem áudio: python jarvis_cli.py
+- Digite: "Que horas são?" — deve imprimir a resposta.
+- Teste: "limpar memória" e confirme.
+- Teste: "exportar histórico" e verifique o arquivo.
+- Rode com áudio (se desejar): python jarvis_cli.py --tts
+  - Verifique se o áudio reproduz quando possível.
+
+4) Checklist de aceitação
+- [ ] Memória persistente funcionando (mensagens salvas entre sessões)
+- [ ] Ferramentas (hora/clima/busca) respondendo
+- [ ] Modo texto opera sem dependências de áudio
+- [ ] Modo texto com --tts tenta reproduzir áudio
+
+5) Observações
+- Se pygame/pyAudio estiverem ausentes, o modo áudio pode falhar; utilize o modo texto para desenvolvimento remoto.
+
+---
+
 ## 🗺️ Evolução do Projeto
 
 ```
