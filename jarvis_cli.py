@@ -14,9 +14,14 @@ def main():
         print("⚠️ Configure OPENAI_API_KEY no arquivo .env")
         return
 
-    # Cria provider de texto e passa flag de TTS
+    # Cria provider de texto e output (console), passa flag de TTS
     input_provider = TextInputProvider(prompt='Você: ')
+    from tools.output_providers import ConsoleOutputProvider
+    output_provider = ConsoleOutputProvider(prefix='JARVIS:')
+
     jarvis = JarvisComMemoria(chave_api, input_provider=input_provider, tts_enabled=args.tts)
+    jarvis.output_provider = output_provider
+    jarvis.input_provider = input_provider
 
     print("=" * 40)
     print("JARVIS - MODO TEXTO (CLI)")

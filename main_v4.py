@@ -449,7 +449,15 @@ IMPORTANTE:
             return None
     
     def falar(self, texto):
-        """Fala usando OpenAI TTS. Respeita a flag tts_enabled: se falso, apenas imprime."""
+        """Fala usando um OutputProvider se existir, senão usa TTS/console padrão."""
+        # Se houver um output_provider, delega para ele
+        if hasattr(self, 'output_provider') and self.output_provider:
+            try:
+                return self.output_provider.speak(texto)
+            except Exception as e:
+                print(f"❌ Erro no output_provider: {e}")
+
+        # Sem output_provider: comportamento antigo
         print(f"🔊 JARVIS: {texto}\n")
 
         if not self.tts_enabled:
