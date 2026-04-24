@@ -9,10 +9,10 @@ Bem-vindo ao projeto **JARVIS**, um assistente virtual completo construído com 
 Acompanhe o desenvolvimento completo do projeto através dos nossos tutoriais no YouTube:
 
 - **Versão 1** - Conceitos Básicos: [Assistir Tutorial](https://www.youtube.com/watch?v=2_VAtNsemRY)
-- **Versão 2** - Full-Duplex Audio: _(Em breve)_
-- **Versão 3** - OpenAI TTS: _(Em breve)_
-- **Versão 4** - Memória e Tools: _(Em breve)_
-
+- **Versão 2** - Full-Duplex Audio: FEITO
+- **Versão 3** - OpenAI TTS: FEITO
+- **Versão 4** - Memória e Tools: FEITO
+- **Versão 5** - Em breve
 ---
 
 ## 🚀 Recursos por Versão
