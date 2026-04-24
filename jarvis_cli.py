@@ -1,11 +1,12 @@
 import os
 import argparse
 from main_v4 import JarvisComMemoria
+from tools.input_providers import TextInputProvider
 
 
 def main():
     parser = argparse.ArgumentParser(description="JARVIS - modo texto (CLI)")
-    parser.add_argument("--no-tts", action="store_true", help="Desativa TTS (apenas saída por texto)")
+    parser.add_argument("--tts", action="store_true", help="Habilita TTS (reproduz áudio quando possível)")
     args = parser.parse_args()
 
     chave_api = os.getenv("OPENAI_API_KEY")
@@ -13,11 +14,14 @@ def main():
         print("⚠️ Configure OPENAI_API_KEY no arquivo .env")
         return
 
-    jarvis = JarvisComMemoria(chave_api)
+    # Cria provider de texto e passa flag de TTS
+    input_provider = TextInputProvider(prompt='Você: ')
+    jarvis = JarvisComMemoria(chave_api, input_provider=input_provider, tts_enabled=args.tts)
 
     print("=" * 40)
     print("JARVIS - MODO TEXTO (CLI)")
     print("=" * 40)
+    print(f"TTS habilitado: {'sim' if args.tts else 'não'}")
 
     # Se não conhecemos o nome do usuário, pergunte por texto
     if not jarvis.nome_usuario:
@@ -34,7 +38,7 @@ def main():
 
     try:
         while True:
-            comando = input("Você: ").strip()
+            comando = input_provider.get_command().strip()
             if not comando:
                 continue
 
@@ -43,7 +47,9 @@ def main():
             # Sair
             if any(p in comando_lower for p in ['sair', 'desligar', 'tchau', 'encerrar']):
                 nome = jarvis.nome_usuario or "amigo"
-                print(f"Até logo, {nome}! Foi um prazer conversar com você!")
+                resposta = f"Até logo, {nome}! Foi um prazer conversar com você!"
+                # fala ou imprime conforme flag
+                jarvis.falar(resposta)
                 break
 
             # Limpar memória
@@ -52,22 +58,25 @@ def main():
                 if confirm.startswith('s'):
                     jarvis.memoria.limpar_historico()
                     jarvis.historico = [{"role": "system", "content": jarvis._criar_prompt_sistema()}]
-                    print("Ok, memória limpa. Começamos do zero!")
+                    jarvis.falar("Ok, memória limpa. Começamos do zero!")
                 else:
-                    print("Ok, mantendo tudo guardado.")
+                    jarvis.falar("Ok, mantendo tudo guardado.")
                 continue
 
             # Exportar histórico
             if 'exportar' in comando_lower and 'histórico' in comando_lower:
                 arquivo = jarvis.memoria.exportar_historico()
-                print(f"Histórico exportado para {arquivo}!")
+                jarvis.falar(f"Histórico exportado para {arquivo}!")
                 continue
 
             # Processa comando
             resposta = jarvis.pensar(comando)
 
-            # Saída por texto (não usamos TTS neste entrypoint)
-            print("JARVIS:", resposta)
+            # Saída: fala se TTS habilitado, senão imprime
+            if args.tts:
+                jarvis.falar(resposta)
+            else:
+                print("JARVIS:", resposta)
 
     except KeyboardInterrupt:
         print("\n👋 Interrompido pelo usuário")
