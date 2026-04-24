@@ -30,7 +30,20 @@ def main():
 
     # Se não conhecemos o nome do usuário, pergunte por texto
     if not jarvis.nome_usuario:
-        nome = input("Qual é o seu nome? ").strip()
+        # Pergunta o nome interativamente quando possível. Em ambientes sem stdin (CI/container)
+        # tenta usar variável de ambiente JARVIS_NOME; se faltar, usa um padrão e prossegue.
+        nome = None
+        try:
+            nome = input("Qual é o seu nome? ").strip()
+        except EOFError:
+            # Ambiente sem stdin — tenta fallback
+            nome = os.getenv("JARVIS_NOME")
+            if nome:
+                print(f"Usando JARVIS_NOME da env: {nome}")
+            else:
+                nome = "amigo"
+                print("Nenhum stdin disponível — usando nome padrão 'amigo'.")
+
         if nome:
             jarvis.nome_usuario = nome
             jarvis.memoria.salvar_nome_usuario(nome)
