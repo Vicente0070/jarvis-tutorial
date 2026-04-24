@@ -96,8 +96,8 @@ def main():
             else:
                 print("JARVIS:", resposta)
 
-    except KeyboardInterrupt:
-        print("\n👋 Interrompido pelo usuário")
+    except (KeyboardInterrupt, EOFError):
+        print("\n👋 Interrompido (KeyboardInterrupt/EOF). Encerrando.")
     finally:
         # Cleanup similar ao executar()
         try:
