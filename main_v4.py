@@ -45,7 +45,7 @@ TTS_VOICE = "shimmer"
 LIMITE_HISTORICO = 50  # Últimas 50 mensagens carregadas do banco
 # ===================================
 
-pygame.mixer.init()
+# pygame mixer inicializado apenas quando necessário (modo áudio)
 
 
 class ClienteOrquestrador:
@@ -84,7 +84,7 @@ class ClienteOrquestrador:
 class JarvisComMemoria:
     """JARVIS v5 - v4 + Memória Persistente + Personalização"""
     
-    def __init__(self, chave_api):
+    def __init__(self, chave_api, input_provider=None, tts_enabled=True):
         print("🔧 Iniciando JARVIS v5...")
         self.cliente = OpenAI(api_key=chave_api)
         print("   ✓ OpenAI cliente criado")
@@ -92,14 +92,18 @@ class JarvisComMemoria:
         print("   ✓ Reconhecedor criado")
         self.pyaudio = pyaudio.PyAudio()
         print("   ✓ PyAudio criado")
-        
+
+        # Input provider (None = áudio) e flag de TTS
+        self.input_provider = input_provider
+        self.tts_enabled = tts_enabled
+
         # NOVO v5: Inicializa MEMÓRIA
         print("   → Iniciando memória...")
         self.memoria = JarvisMemoria()
         self.sessao_id = self.memoria.iniciar_sessao()
         self.contador_mensagens = 0
         print(f"   ✓ Memória iniciada (sessão #{self.sessao_id})")
-        
+
         # Inicia cliente do orquestrador
         print("   → Iniciando orquestrador...")
         self.orquestrador = ClienteOrquestrador()
@@ -303,19 +307,28 @@ IMPORTANTE:
             fluxo.close()
     
     def ouvir(self):
-        """Captura comando de voz (idêntico v4)"""
+        """Compatibilidade: se houver um input_provider, usa-o; senão usa microfone"""
+        if self.input_provider:
+            try:
+                texto = self.input_provider.get_command()
+                print(f"👤 Você (texto): {texto}")
+                return texto
+            except Exception as e:
+                print(f"❌ Erro no input_provider: {e}")
+                return None
+
+        # fallback para áudio
         print("\n🎧 Fale seu comando...")
-        
         mic = sr.Microphone()
         with mic as source:
             self.reconhecedor.adjust_for_ambient_noise(source, duration=0.3)
-            
+
             try:
                 audio = self.reconhecedor.listen(source, timeout=15, phrase_time_limit=30)
                 texto = self.reconhecedor.recognize_google(audio, language='pt-BR')
                 print(f"👤 Você: {texto}")
                 return texto
-                
+
             except sr.WaitTimeoutError:
                 return None
             except sr.UnknownValueError:
@@ -436,18 +449,21 @@ IMPORTANTE:
             return None
     
     def falar(self, texto):
-        """Fala usando OpenAI TTS (idêntico v4)"""
+        """Fala usando OpenAI TTS. Respeita a flag tts_enabled: se falso, apenas imprime."""
         print(f"🔊 JARVIS: {texto}\n")
-        
+
+        if not self.tts_enabled:
+            return False
+
         self.falando = True
         self.interromper.clear()
         self.comando_interrompido = None
-        
+
         with self.trava_audio:
             self.buffer_audio = []
-        
+
         arquivo_audio = os.path.join(tempfile.gettempdir(), "jarvis_fala.mp3")
-        
+
         try:
             # Streaming recomendado pela OpenAI
             with self.cliente.audio.speech.with_streaming_response.create(
@@ -457,32 +473,42 @@ IMPORTANTE:
                 instructions="Speak in a cheerful and positive tone.",
             ) as response:
                 response.stream_to_file(arquivo_audio)
-            
-            pygame.mixer.music.load(arquivo_audio)
-            pygame.mixer.music.play()
-            
-            while pygame.mixer.music.get_busy():
-                if self.interromper.is_set():
-                    pygame.mixer.music.stop()
-                    print("🛑 Fala interrompida!")
-                    break
-                time.sleep(0.05)
-            
+
+            # Inicializa pygame mixer no momento do uso (evita init em ambientes sem áudio)
+            try:
+                import pygame
+                pygame.mixer.init()
+                pygame.mixer.music.load(arquivo_audio)
+                pygame.mixer.music.play()
+
+                while pygame.mixer.music.get_busy():
+                    if self.interromper.is_set():
+                        pygame.mixer.music.stop()
+                        print("🛑 Fala interrompida!")
+                        break
+                    time.sleep(0.05)
+
+                try:
+                    pygame.mixer.music.unload()
+                except Exception:
+                    pass
+            except Exception as e:
+                print(f"❌ Erro ao reproduzir áudio (pygame): {e}")
+
         except Exception as e:
             print(f"❌ Erro na fala: {e}")
-        
+
         finally:
             self.falando = False
             try:
                 if os.path.exists(arquivo_audio):
-                    pygame.mixer.music.unload()
                     os.remove(arquivo_audio)
             except:
                 pass
-        
+
         if self.interromper.is_set():
             time.sleep(1.0)
-        
+
         return self.interromper.is_set()
     
     def executar(self):
